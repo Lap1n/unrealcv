@@ -1,54 +1,59 @@
 #include "UnrealCVPrivate.h"
 #include "ScreenCapture.h"
+
+#include "IImageWrapper.h"
 #include "UE4CVServer.h"
 #include "IImageWrapperModule.h"
+#include "ImageUtils.h"
 
 /** Sync operation for screen capture */
-bool CaptureWithSync(UGameViewportClient *ViewportClient, const FString& CaptureFilename)
+bool CaptureWithSync(UGameViewportClient* ViewportClient, const FString& CaptureFilename)
 {
-		bool bScreenshotSuccessful = false;
-		FViewport* InViewport = ViewportClient->Viewport;
-		ViewportClient->GetEngineShowFlags()->SetMotionBlur(false);
-		FIntVector Size(InViewport->GetSizeXY().X, InViewport->GetSizeXY().Y, 0);
+	bool bScreenshotSuccessful = false;
+	FViewport* InViewport = ViewportClient->Viewport;
+	ViewportClient->GetEngineShowFlags()->SetMotionBlur(false);
+	FIntVector Size(InViewport->GetSizeXY().X, InViewport->GetSizeXY().Y, 0);
 
-		bool IsHDR = true;
+	bool IsHDR = true;
 
-		if (!IsHDR)
+	if (!IsHDR)
+	{
+		TArray<FColor> Bitmap;
+		bScreenshotSuccessful = GetViewportScreenShot(InViewport, Bitmap);
+		// InViewport->ReadFloat16Pixels
+
+		if (bScreenshotSuccessful)
 		{
-			TArray<FColor> Bitmap;
-			bScreenshotSuccessful = GetViewportScreenShot(InViewport, Bitmap);
-			// InViewport->ReadFloat16Pixels
-
-			if (bScreenshotSuccessful)
+			// Ensure that all pixels' alpha is set to 255
+			for (auto& Color : Bitmap)
 			{
-				// Ensure that all pixels' alpha is set to 255
-				for (auto& Color : Bitmap)
-				{
-					Color.A = 255;
-				}
-				// TODO: Need to blend alpha, a bit weird from screen.
-
-				TArray<uint8> CompressedBitmap;
-				FImageUtils::CompressImageArray(Size.X, Size.Y, Bitmap, CompressedBitmap);
-				FFileHelper::SaveArrayToFile(CompressedBitmap, *CaptureFilename);
+				Color.A = 255;
 			}
+			// TODO: Need to blend alpha, a bit weird from screen.
+
+			TArray<uint8> CompressedBitmap;
+			FImageUtils::CompressImageArray(Size.X, Size.Y, Bitmap, CompressedBitmap);
+			FFileHelper::SaveArrayToFile(CompressedBitmap, *CaptureFilename);
 		}
-		else // Capture HDR, unable to read float16 data from here. Need to use a rendertarget.
-		{
-			CaptureFilename.Replace(TEXT(".png"), TEXT(".exr"));
-			TArray<FFloat16Color> FloatBitmap;
-			FloatBitmap.AddZeroed(Size.X * Size.Y);
-			InViewport->ReadFloat16Pixels(FloatBitmap);
+	}
+	else // Capture HDR, unable to read float16 data from here. Need to use a rendertarget.
+	{
+		// CaptureFilename.Replace(TEXT(".png"), TEXT(".exr"));
+		TArray<FFloat16Color> FloatBitmap;
+		FloatBitmap.AddZeroed(Size.X * Size.Y);
+		InViewport->ReadFloat16Pixels(FloatBitmap);
 
-			IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
-			TSharedPtr<IImageWrapper> ImageWrapper = ImageWrapperModule.CreateImageWrapper(EImageFormat::EXR);
+		IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(
+			FName("ImageWrapper"));
+		TSharedPtr<IImageWrapper> ImageWrapper = ImageWrapperModule.CreateImageWrapper(EImageFormat::EXR);
 
-			ImageWrapper->SetRaw(FloatBitmap.GetData(), FloatBitmap.GetAllocatedSize(), Size.X, Size.Y, ERGBFormat::RGBA, 16);
-			const TArray<uint8>& PngData = ImageWrapper->GetCompressed();
-			FFileHelper::SaveArrayToFile(PngData, *CaptureFilename);
-		}
+		ImageWrapper->SetRaw(FloatBitmap.GetData(), FloatBitmap.GetAllocatedSize(), Size.X, Size.Y, ERGBFormat::RGBA,
+		                     16);
+		const TArray<uint8>& PngData = static_cast<TArray<uint8>>(ImageWrapper->GetCompressed());
+		FFileHelper::SaveArrayToFile(PngData, *CaptureFilename);
+	}
 
-		return bScreenshotSuccessful;
+	return bScreenshotSuccessful;
 }
 
 extern FString GetDiskFilename(FString Filename);
@@ -58,28 +63,28 @@ extern FString GetDiskFilename(FString Filename);
 */
 void CaptureWithCustomViewport()
 {
-		// Method 1: Use custom ViewportClient
-		// UMyGameViewportClient* ViewportClient = (UMyGameViewportClient*)Character->GetWorld()->GetGameViewport();
-		// ViewportClient->CaptureScreen(FullFilename);
+	// Method 1: Use custom ViewportClient
+	// UMyGameViewportClient* ViewportClient = (UMyGameViewportClient*)Character->GetWorld()->GetGameViewport();
+	// ViewportClient->CaptureScreen(FullFilename);
 
-		/* This is only valid within custom viewport client
-		UGameViewportClient* ViewportClient = Character->GetWorld()->GetGameViewport();
-		ViewportClient->OnScreenshotCaptured().Clear(); // This is required to handle the filename issue.
-		ViewportClient->OnScreenshotCaptured().AddLambda(
-			[FullFilename](int32 SizeX, int32 SizeY, const TArray<FColor>& Bitmap)
+	/* This is only valid within custom viewport client
+	UGameViewportClient* ViewportClient = Character->GetWorld()->GetGameViewport();
+	ViewportClient->OnScreenshotCaptured().Clear(); // This is required to handle the filename issue.
+	ViewportClient->OnScreenshotCaptured().AddLambda(
+		[FullFilename](int32 SizeX, int32 SizeY, const TArray<FColor>& Bitmap)
+	{
+		// Save bitmap to disk
+		TArray<FColor>& RefBitmap = const_cast<TArray<FColor>&>(Bitmap);
+		for (auto& Color : RefBitmap)
 		{
-			// Save bitmap to disk
-			TArray<FColor>& RefBitmap = const_cast<TArray<FColor>&>(Bitmap);
-			for (auto& Color : RefBitmap)
-			{
-				Color.A = 255;
-			}
+			Color.A = 255;
+		}
 
-			TArray<uint8> CompressedBitmap;
-			FImageUtils::CompressImageArray(SizeX, SizeY, RefBitmap, CompressedBitmap);
-			FFileHelper::SaveArrayToFile(CompressedBitmap, *FullFilename);
-		});
-		*/
+		TArray<uint8> CompressedBitmap;
+		FImageUtils::CompressImageArray(SizeX, SizeY, RefBitmap, CompressedBitmap);
+		FFileHelper::SaveArrayToFile(CompressedBitmap, *FullFilename);
+	});
+	*/
 }
 
 /**
@@ -112,7 +117,6 @@ FExecStatus CaptureWithBuiltIn(const FString& Filename)
 	FExecStatus ExecStatusQuery = FExecStatus::AsyncQuery(FPromise(PromiseDelegate));
 	return ExecStatusQuery;
 }
-
 
 
 // Method3: USceneCaptureComponent2D, inspired by StereoPanorama plugin

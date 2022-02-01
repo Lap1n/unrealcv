@@ -16,12 +16,13 @@ DECLARE_LOG_CATEGORY_EXTERN(LogUnrealCV, Log, All);
 
 inline FString GetProjectName()
 {
-#if ENGINE_MINOR_VERSION >= 18  // Assume major version is 4
+	// #if ENGINE_MINOR_VERSION >= 18  // Assume major version is 4
+	// 	FString SceneName = FApp::GetProjectName();
+	// #else
+	// 	FString SceneName = FApp::GetGameName();
+	// 	// This is marked as deprecated in 4.18
+	// 	// https://github.com/EpicGames/UnrealEngine/blob/release/Engine/Source/Runtime/Core/Public/Misc/App.h:L91
+	// #endif
 	FString SceneName = FApp::GetProjectName();
-#else
-	FString SceneName = FApp::GetGameName();
-    // This is marked as deprecated in 4.18
-    // https://github.com/EpicGames/UnrealEngine/blob/release/Engine/Source/Runtime/Core/Public/Misc/App.h:L91
-#endif
-    return SceneName;
+	return SceneName;
 }

@@ -73,7 +73,7 @@ TArray<uint8> SerializationUtils::Image2Png(const TArray<FColor>& Image, int Wid
 	static IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
 	static TSharedPtr<IImageWrapper> ImageWrapper = ImageWrapperModule.CreateImageWrapper(EImageFormat::PNG);
 	ImageWrapper->SetRaw(Image.GetData(), Image.GetAllocatedSize(), Width, Height, ERGBFormat::BGRA, 8);
-	const TArray<uint8>& ImgData = ImageWrapper->GetCompressed();
+	const TArray<uint8>& ImgData = static_cast<TArray<uint8>>(ImageWrapper->GetCompressed());
 	return ImgData;
 }
 
@@ -86,6 +86,6 @@ TArray<uint8> SerializationUtils::Image2Exr(const TArray<FFloat16Color>& FloatIm
 	static IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
 	static TSharedPtr<IImageWrapper> ImageWrapper = ImageWrapperModule.CreateImageWrapper(EImageFormat::EXR);
 	ImageWrapper->SetRaw(FloatImage.GetData(), FloatImage.GetAllocatedSize(), Width, Height, ERGBFormat::RGBA, 16);
-	const TArray<uint8>& ExrData = ImageWrapper->GetCompressed();
+	const TArray<uint8>& ExrData =static_cast<TArray<uint8>>(ImageWrapper->GetCompressed());
 	return ExrData;
 }

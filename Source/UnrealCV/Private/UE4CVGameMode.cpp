@@ -4,6 +4,7 @@
 #include "Networking.h"
 #include <string>
 #include "ImageUtils.h"
+#include "UE4CVServer.h"
 
 AUE4CVGameMode::AUE4CVGameMode()
 {
@@ -76,7 +77,7 @@ AUE4CVPawn::AUE4CVPawn()
 {
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-	this->bHidden = true;
+	this->SetHidden(true);
 	this->SetTickableWhenPaused(true);
 	// this->CollisionComponent->SetSphereRadius(1.0f);
 }

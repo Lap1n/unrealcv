@@ -1,3 +1,4 @@
+#include "UE4CVServer.h"
 #include "UnrealCVPrivate.h"
 #include "Runtime/Core/Public/Misc/CommandLine.h"
 #include "Runtime/Core/Public/Misc/Parse.h"

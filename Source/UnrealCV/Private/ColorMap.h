@@ -125,14 +125,14 @@ bool FObjectPainter::PaintObject(AActor* Actor, const FColor& Color, bool IsColo
 #if ENGINE_MINOR_VERSION >= 14  // Assume major version is 4
 			StaticMesh = StaticMeshComponent->GetStaticMesh(); // This is a new function introduced in 4.14
 #else
-			StaticMesh = StaticMeshComponent->StaticMesh; // This is deprecated in 4.14, add here for backward compatibility
+			StaticMesh = StaticMeshComponent->GetStaticMesh(); // This is deprecated in 4.14, add here for backward compatibility
 #endif
 			if (StaticMesh)
 			{
-				uint32 NumLODLevel = StaticMesh->RenderData->LODResources.Num();
+				uint32 NumLODLevel = StaticMesh->GetRenderData()->LODResources.Num();
 				for (uint32 PaintingMeshLODIndex = 0; PaintingMeshLODIndex < NumLODLevel; PaintingMeshLODIndex++)
 				{
-					FStaticMeshLODResources& LODModel = StaticMesh->RenderData->LODResources[PaintingMeshLODIndex];
+					FStaticMeshLODResources& LODModel = StaticMesh->GetRenderData()->LODResources[PaintingMeshLODIndex];
 					FStaticMeshComponentLODInfo* InstanceMeshLODInfo = NULL;
 
 					// PaintingMeshLODIndex + 1 is the minimum requirement, enlarge if not satisfied
