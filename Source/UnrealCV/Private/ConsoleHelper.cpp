@@ -48,6 +48,12 @@ FConsoleOutputDevice* FConsoleHelper::GetConsole() // The ConsoleOutputDevice wi
 
 void FConsoleHelper::VRun(const TArray<FString>& Args)
 {
+	#if WITH_EDITOR
+		if (FUE4CVServer::Get().GetGameWorld()== nullptr)
+		{
+			return;
+		}
+	#endif
 	if (CommandDispatcher == nullptr)
 	{
 		UE_LOG(LogUnrealCV, Error, TEXT("CommandDispatcher not set"));
@@ -71,10 +77,19 @@ void FConsoleHelper::VRun(const TArray<FString>& Args)
 
 void FConsoleHelper::VGet(const TArray<FString>& Args)
 {
+	#if WITH_EDITOR
+	
+		if (FUE4CVServer::Get().GetGameWorld()== nullptr)
+		{
+			return;
+		}
+	#endif
+	
 	if (CommandDispatcher == nullptr)
 	{
 		UE_LOG(LogUnrealCV, Error, TEXT("CommandDispatcher not set"));
 	}
+	
 	// TODO: Is there any way to know which command trigger this handler?
 	// Join string
 	FString Cmd = "vget ";
@@ -94,12 +109,19 @@ void FConsoleHelper::VGet(const TArray<FString>& Args)
 	GetConsole()->Log(ExecStatus.GetMessage());
 }
 
+
 void FConsoleHelper::VSet(const TArray<FString>& Args)
 {
 	if (CommandDispatcher == nullptr)
 	{
 		UE_LOG(LogUnrealCV, Error, TEXT("CommandDispatcher not set"));
 	}
+	#if WITH_EDITOR
+		if (FUE4CVServer::Get().GetGameWorld()== nullptr)
+		{
+			return;
+		}
+	#endif
 	FString Cmd = "vset ";
 	uint32 NumArgs = Args.Num();
 	if (NumArgs == 0) return;
@@ -119,6 +141,12 @@ void FConsoleHelper::VSet(const TArray<FString>& Args)
 
 void FConsoleHelper::VExec(const TArray<FString>& Args)
 {
+	#if WITH_EDITOR
+		if (FUE4CVServer::Get().GetGameWorld()== nullptr)
+		{
+			return;
+		}
+	#endif
 	FString Cmd = "vexec ";
 	uint32 NumArgs = Args.Num();
 	if (NumArgs == 0) return;
