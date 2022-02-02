@@ -257,7 +257,7 @@ TArray<FVector> UVisionBPLib::SkinnedMeshComponentGetVertexArray(USkinnedMeshCom
 	TArray<FVector> VertexArray;
 	if (!IsValid(Component)) return VertexArray;
 
-#if ENGINE_MINOR_VERSION < 19
+#if ENGINE_MAJOR_VERSION==4 && ENGINE_MINOR_VERSION < 19
 	Component->ComputeSkinnedPositions(VertexArray);
 #else
 	// Ref: https://github.com/EpicGames/UnrealEngine/blob/4.19/Engine/Source/Runtime/Engine/Private/PhysicsEngine/PhysAnim.cpp#L671
@@ -299,15 +299,15 @@ TArray<FVector> UVisionBPLib::StaticMeshComponentGetVertexArray(UStaticMeshCompo
 
 	if (StaticMesh)
 	{
-		uint32 NumLODLevel = StaticMesh->RenderData->LODResources.Num();
+		uint32 NumLODLevel = StaticMesh->GetRenderData()->LODResources.Num();
 		for (uint32 LODIndex = 0; LODIndex < NumLODLevel; LODIndex++)
 		{
-			FStaticMeshLODResources& LODModel = StaticMesh->RenderData->LODResources[LODIndex];
+			FStaticMeshLODResources& LODModel = StaticMesh->GetRenderData()->LODResources[LODIndex];
 			FStaticMeshComponentLODInfo* InstanceMeshLODInfo = NULL;
 
 			uint32 NumVertices = LODModel.GetNumVertices();
 
-#if ENGINE_MINOR_VERSION < 19
+#if ENGINE_MAJOR_VERSION==4 && ENGINE_MINOR_VERSION < 19
 			FPositionVertexBuffer& PositionVertexBuffer = LODModel.PositionVertexBuffer;
 #else
 			FStaticMeshVertexBuffers& StaticMeshVertexBuffers = LODModel.VertexBuffers;
