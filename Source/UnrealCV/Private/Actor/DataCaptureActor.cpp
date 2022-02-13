@@ -24,7 +24,7 @@
 // Sets default values
 ADataCaptureActor::ADataCaptureActor()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 	// MeshComponent = CreateDefaultSubobject<UMeshComponent>(TEXT("SceneRoot"));
@@ -55,7 +55,8 @@ ADataCaptureActor::ADataCaptureActor()
 	Billboard = CreateDefaultSubobject<UMaterialBillboardComponent>(TEXT("BillboardComponent"));
 	if (!IsRunningCommandlet() && (Billboard != NULL))
 	{
-		static ConstructorHelpers::FObjectFinder<UMaterial> MaterialAsset(TEXT("/Engine/EditorMaterials/HelpActorMaterial"));
+		static ConstructorHelpers::FObjectFinder<UMaterial> MaterialAsset(
+			TEXT("/Engine/EditorMaterials/HelpActorMaterial"));
 		Billboard->AddElement(MaterialAsset.Object, nullptr, false, 32.0f, 32.0f, nullptr);
 		// Billboard->SetupAttachment(RootComponent);
 		Billboard->bIsEditorOnly = true;
@@ -90,9 +91,15 @@ void ADataCaptureActor::BeginPlay()
 	FTimerHandle CaptureTimerHandle, SimTimerHandle;
 
 	UWorld* World = GetWorld();
+	TArray<AActor*> SensorActors;
+	UGameplayStatics::GetAllActorsOfClass(World, ACamSensorActor::StaticClass(), SensorActors);
+	for (const auto SensorActor : SensorActors)
+	{
+		Sensors.Add(static_cast<ACamSensorActor*>(SensorActor));
+	}
 	World->GetTimerManager().SetTimer(
-		CaptureTimerHandle, 
-		this, 
+		CaptureTimerHandle,
+		this,
 		// Note: We want to control the interval with a real world time, not a game time
 		&ADataCaptureActor::CaptureFrame, CaptureInterval * TimeDilation, true);
 
@@ -140,7 +147,7 @@ FJsonObjectBP ReadJointInfo(AActor* Actor)
 // FJsonObjectBP ReadJointInfo(USkeletalMeshComponent* SkelComponent)
 {
 	FJsonObjectBP JsonObjectBP;
-	
+
 	// ASkeletalMeshActor* SkelMeshActor = Cast<ASkeletalMeshActor>(Actor);
 	if (!IsValid(Actor)) return JsonObjectBP;
 
@@ -152,7 +159,7 @@ FJsonObjectBP ReadJointInfo(AActor* Actor)
 	{
 		return JsonObjectBP;
 	}
-	
+
 
 	TMap<FString, FJsonObjectBP> HumanInfo;
 
@@ -175,14 +182,14 @@ FJsonObjectBP ReadJointInfo(AActor* Actor)
 FJsonObjectBP ReadVertexInfo(AActor* Actor)
 {
 	TArray<FVector> VertexArray;
-	UVisionBPLib::GetVertexArray(Actor, VertexArray); 
+	UVisionBPLib::GetVertexArray(Actor, VertexArray);
 
 	TArray<FJsonObjectBP> JsonBPArray;
-	for (FVector Loc: VertexArray)
+	for (FVector Loc : VertexArray)
 	{
 		JsonBPArray.Add(FJsonObjectBP(Loc));
 	}
-	return FJsonObjectBP(JsonBPArray);	
+	return FJsonObjectBP(JsonBPArray);
 
 	// Note: new version uses vertex capture component to capture vertex
 	// TArray<UActorComponent*> VertexCaptureComponents = Actor->GetComponentsByClass(UVertexCaptureComponent::StaticClass());
@@ -208,7 +215,7 @@ FJsonObjectBP ReadVertexInfo(AActor* Actor)
 	// return FJsonObjectBP(JsonBPArray);
 }
 
-UClass* SearchCommonClass(UClass *Class)
+UClass* SearchCommonClass(UClass* Class)
 {
 	// Common classes are
 	// AActor -> AStaticMeshActor
@@ -267,7 +274,7 @@ void ADataCaptureActor::CaptureVertex()
 	}
 
 	FString JsonFilename = MakeFilename("", "vertex", ".json");
-	FString JsonStr = FJsonObjectBP(VertexDataMap).ToString(); 
+	FString JsonStr = FJsonObjectBP(VertexDataMap).ToString();
 	UVisionBPLib::SaveData(JsonStr, JsonFilename);
 }
 
@@ -302,7 +309,7 @@ void ADataCaptureActor::CaptureJoint()
 		AActor* Actor = *ActorItr;
 		UActorComponent* SkelComponent = Actor->GetComponentByClass(USkeletalMeshComponent::StaticClass());
 		if (IsValid(SkelComponent))
-		{ 
+		{
 			HumanActorList.Add(*ActorItr);
 		}
 	}
@@ -318,7 +325,7 @@ void ADataCaptureActor::CaptureJoint()
 	}
 
 	FString JsonFilename = MakeFilename("", "joint", ".json");
-	FString JsonStr = FJsonObjectBP(JointInfoMap).ToString(); 
+	FString JsonStr = FJsonObjectBP(JointInfoMap).ToString();
 	UVisionBPLib::SaveData(JsonStr, JsonFilename);
 }
 
@@ -379,16 +386,16 @@ void ADataCaptureActor::CaptureImageFromSensor(FString SensorName, UFusionCamSen
 
 	// TArray<float> DepthData;
 	// CameraActor->FusionCamSensor->GetDepth(DepthData, Width, Height);
-	
+
 	TArray<FString> Keys = {
-		"SensorName", 
-		"Location", 
-		"Rotation", 
-		"FilmWidth", 
+		"SensorName",
+		"Location",
+		"Rotation",
+		"FilmWidth",
 		"FilmHeight",
 		"Fov",
 		// "IntrinsicMatrix"
-		};
+	};
 	// Save camera information
 	FMatrix Matrix;
 	TArray<FJsonObjectBP> Values
@@ -415,7 +422,7 @@ void ADataCaptureActor::CaptureImage()
 	for (ACamSensorActor* CameraActor : Sensors)
 	{
 		if (!IsValid(CameraActor)) continue;
-		
+
 		// Get all sensors in this camera actor
 		TArray<FString> SensorNames = CameraActor->GetSensorNames();
 		TArray<UFusionCamSensor*> sensors = CameraActor->GetSensors();
@@ -430,13 +437,15 @@ void ADataCaptureActor::CaptureImage()
 		{
 			this->CaptureImageFromSensor(SensorNames[i], sensors[i]);
 		}
-
 	}
-	FString ScreenMessage = FString::Printf(TEXT("%d frames / %d images are captured from %d cameras"), FrameCounter, FrameCounter * Sensors.Num(), Sensors.Num());
+	FString ScreenMessage = FString::Printf(
+		TEXT("%d frames / %d images are captured from %d cameras"), FrameCounter, FrameCounter * Sensors.Num(),
+		Sensors.Num());
 	GEngine->AddOnScreenDebugMessage(-1, -1.0f, FColor::Green, *ScreenMessage);
 }
 
-void ADataCaptureActor::ExitGame() { 
+void ADataCaptureActor::ExitGame()
+{
 	// FGenericPlatformMisc::RequestExit(false);
 	// GetWorld()->Exec(GetWorld(), TEXT("quit")); // TODO: Find a better way to implement this
 	GetWorld()->GetFirstPlayerController()->ConsoleCommand(TEXT("quit"));
@@ -448,9 +457,11 @@ FString ADataCaptureActor::MakeFilename(FString CameraName, FString DataType, FS
 	int FrameNumber;
 	switch (ImageIdType)
 	{
-		case EImageId::GameFrameId: FrameNumber = UVisionBPLib::FrameNumber(); break;
-		case EImageId::RecordedFrameId: FrameNumber = FrameCounter; break;
-		default: FrameNumber = UVisionBPLib::FrameNumber();
+	case EImageId::GameFrameId: FrameNumber = UVisionBPLib::FrameNumber();
+		break;
+	case EImageId::RecordedFrameId: FrameNumber = FrameCounter;
+		break;
+	default: FrameNumber = UVisionBPLib::FrameNumber();
 	}
 
 	FString Filename;
@@ -459,16 +470,16 @@ FString ADataCaptureActor::MakeFilename(FString CameraName, FString DataType, FS
 		if (FolderStructure == EFolderStructure::Tree)
 		{
 			Filename = FString::Printf(
-				TEXT("%s/%08d%s"), 
+				TEXT("%s/%08d%s"),
 				*DataType,
 				FrameNumber,
 				*FileExtension
 			);
-		}	
+		}
 		if (FolderStructure == EFolderStructure::Flat)
 		{
 			Filename = FString::Printf(
-				TEXT("%s_%08d%s"), 
+				TEXT("%s_%08d%s"),
 				*DataType,
 				FrameNumber,
 				*FileExtension
@@ -480,18 +491,18 @@ FString ADataCaptureActor::MakeFilename(FString CameraName, FString DataType, FS
 		if (FolderStructure == EFolderStructure::Tree)
 		{
 			Filename = FString::Printf(
-				TEXT("%s/%s/%08d%s"), 
-				*CameraName, 
+				TEXT("%s/%s/%08d%s"),
+				*CameraName,
 				*DataType,
 				FrameNumber,
 				*FileExtension
 			);
-		}	
+		}
 		if (FolderStructure == EFolderStructure::Flat)
 		{
 			Filename = FString::Printf(
-				TEXT("%s_%s_%08d%s"), 
-				*CameraName, 
+				TEXT("%s_%s_%08d%s"),
+				*CameraName,
 				*DataType,
 				FrameNumber,
 				*FileExtension
@@ -506,12 +517,14 @@ FString ADataCaptureActor::MakeFilename(FString CameraName, FString DataType, FS
 
 
 #if WITH_EDITOR
-void ADataCaptureActor::PostEditChangeProperty(FPropertyChangedEvent &PropertyChangedEvent)
+void ADataCaptureActor::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	// This is important, otherwise the change will be lost
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
-	FName PropertyName = (PropertyChangedEvent.Property != NULL) ? PropertyChangedEvent.Property->GetFName() : NAME_None;
+	FName PropertyName = (PropertyChangedEvent.Property != NULL)
+		                     ? PropertyChangedEvent.Property->GetFName()
+		                     : NAME_None;
 	if (PropertyName == GET_MEMBER_NAME_CHECKED(ADataCaptureActor, bListSensors))
 	{
 		Sensors.Empty();

@@ -25,16 +25,18 @@ public:
 	virtual TArray<UFusionCamSensor*> GetSensors() override;
 
 private:
-	UPROPERTY(Instanced, Category = StereoCameraActor, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(Instanced, Category = StereoCameraActor, VisibleAnywhere, BlueprintReadOnly,
+		meta = (AllowPrivateAccess = "true"))
 	UFusionCamSensor* LeftSensor;
 
-	UPROPERTY(Instanced, Category = StereoCameraActor, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(Instanced, Category = StereoCameraActor, VisibleAnywhere, BlueprintReadOnly,
+		meta = (AllowPrivateAccess = "true"))
 	UFusionCamSensor* RightSensor;
 
 	UPROPERTY(Category = StereoCameraActor, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class USceneComponent* SceneComponent;
 
 	void SetBaselineDistance();
-	
-	void PostEditChangeProperty(FPropertyChangedEvent &PropertyChangedEvent);
+
+	void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent);
 };

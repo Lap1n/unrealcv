@@ -51,7 +51,8 @@ public:
 
 	/** Get depth data */
 	UFUNCTION(BlueprintPure, Category = "unrealcv")
-	void GetDepth(TArray<float>& DepthData, int& InOutWidth, int& InOutHeight, EDepthMode DepthMode = EDepthMode::PlaneDepth);
+	void GetDepth(TArray<float>& DepthData, int& InOutWidth, int& InOutHeight,
+	              EDepthMode DepthMode = EDepthMode::PlaneDepth);
 
 	/** Get surface normal data */
 	UFUNCTION(BlueprintPure, Category = "unrealcv")
@@ -111,7 +112,7 @@ public:
 	static TArray<UFusionCamSensor*> GetComponents(AActor* Actor);
 
 #if WITH_EDITOR
-	virtual void PostEditChangeProperty(FPropertyChangedEvent &PropertyChangedEvent) override;
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif
 
 private:
@@ -149,6 +150,4 @@ protected:
 	and
 	https://github.com/EpicGames/UnrealEngine/blob/4.16/Engine/Source/Editor/LevelEditor/Private/SLevelViewport.cpp#L3908
 	*/
-
-
 };
